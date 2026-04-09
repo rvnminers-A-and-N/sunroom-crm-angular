@@ -1,0 +1,92 @@
+@use '@angular/material' as mat;
+
+// Sunroom CRM custom theme
+html {
+  height: 100%;
+  @include mat.theme(
+    (
+      color: (
+        primary: mat.$green-palette,
+        tertiary: mat.$orange-palette,
+      ),
+      typography: 'DM Sans',
+      density: 0,
+    )
+  );
+}
+
+// Override Material system tokens with Sunroom brand colors
+:root {
+  --mat-sys-primary: #02795f;
+  --mat-sys-on-primary: #ffffff;
+  --mat-sys-primary-container: #a7f0d6;
+  --mat-sys-on-primary-container: #00211a;
+  --mat-sys-surface: #f7f7f7;
+  --mat-sys-on-surface: #1f2933;
+  --mat-sys-error: #f76c6c;
+  --mat-sys-on-error: #ffffff;
+
+  // Sunroom brand tokens
+  --sr-primary: #02795f;
+  --sr-primary-dark: #015f4e;
+  --sr-coral: #f76c6c;
+  --sr-orange: #f9a66c;
+  --sr-gold: #f4c95d;
+  --sr-cream: #fff6e5;
+  --sr-light-bg: #f7f7f7;
+  --sr-text: #1f2933;
+  --sr-border: #e5e7eb;
+  --sr-info: #3b82f6;
+  --sr-gradient: linear-gradient(135deg, #f76c6c, #f9a66c, #f4c95d);
+  --sr-sidebar-width: 260px;
+}
+
+body {
+  color-scheme: light;
+  background-color: var(--sr-light-bg);
+  color: var(--sr-text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  margin: 0;
+  height: 100%;
+}
+
+// Global utility classes
+.sr-gradient-text {
+  background: var(--sr-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.sr-gradient-bg {
+  background: var(--sr-gradient);
+}
+
+// Card styling
+.sr-card {
+  background: #ffffff;
+  border: 1px solid var(--sr-border);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
