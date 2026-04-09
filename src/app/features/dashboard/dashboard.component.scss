@@ -1,0 +1,49 @@
+.dashboard {
+  &__title {
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--sr-text);
+    margin: 0 0 24px;
+  }
+
+  &__stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+
+    a {
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.15s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+    }
+  }
+
+  &__grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  &__loading {
+    text-align: center;
+    color: #9ca3af;
+    padding: 48px 0;
+  }
+}
+
+@media (max-width: 1024px) {
+  .dashboard__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard__stats {
+    grid-template-columns: 1fr;
+  }
+}

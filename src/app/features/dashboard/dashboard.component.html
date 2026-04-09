@@ -1,0 +1,54 @@
+<div class="dashboard">
+  <h1 class="dashboard__title">Dashboard</h1>
+
+  @if (data(); as d) {
+    <div class="dashboard__stats">
+      <a routerLink="/contacts">
+        <app-stat-card
+          icon="people"
+          label="Total Contacts"
+          [value]="d.totalContacts"
+        />
+      </a>
+      <a routerLink="/companies">
+        <app-stat-card
+          icon="business"
+          label="Total Companies"
+          [value]="d.totalCompanies"
+          iconBg="rgba(59, 130, 246, 0.1)"
+          iconColor="#3B82F6"
+        />
+      </a>
+      <a routerLink="/deals">
+        <app-stat-card
+          icon="handshake"
+          label="Active Deals"
+          [value]="d.totalDeals"
+          iconBg="rgba(249, 166, 108, 0.1)"
+          iconColor="#F9A66C"
+        />
+      </a>
+      <app-stat-card
+        icon="trending_up"
+        label="Pipeline Value"
+        [value]="d.totalPipelineValue | currencyShort"
+        iconBg="rgba(244, 201, 93, 0.1)"
+        iconColor="#F4C95D"
+      />
+      <app-stat-card
+        icon="emoji_events"
+        label="Won Revenue"
+        [value]="d.wonRevenue | currencyShort"
+        iconBg="rgba(2, 121, 95, 0.1)"
+        iconColor="#02795F"
+      />
+    </div>
+
+    <div class="dashboard__grid">
+      <app-pipeline-chart [stages]="d.dealsByStage" />
+      <app-recent-activity-list [activities]="d.recentActivities" />
+    </div>
+  } @else if (loading()) {
+    <p class="dashboard__loading">Loading dashboard...</p>
+  }
+</div>
