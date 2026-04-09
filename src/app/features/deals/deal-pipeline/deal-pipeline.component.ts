@@ -3,6 +3,7 @@ import { CdkDragDrop, DragDropModule } from '@angular/cdk/drag-drop';
 import { MatButtonModule } from '@angular/material/button';
 import { MatIconModule } from '@angular/material/icon';
 import { MatDialog } from '@angular/material/dialog';
+import { RouterLink } from '@angular/router';
 import { DealService } from '../services/deal.service';
 import { NotificationService } from '@core/services/notification.service';
 import { Deal, PipelineStage } from '@core/models/deal.model';
@@ -27,6 +28,7 @@ const STAGE_COLORS: Record<string, string> = {
     DragDropModule,
     MatButtonModule,
     MatIconModule,
+    RouterLink,
     DealCardComponent,
     PageHeaderComponent,
     CurrencyShortPipe,

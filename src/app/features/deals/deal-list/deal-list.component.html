@@ -5,6 +5,15 @@
   (actionClick)="openCreateDialog()"
 />
 
+<div class="deals-view-toggle">
+  <a mat-stroked-button routerLink="/deals" class="deals-view-toggle__active">
+    <mat-icon>view_list</mat-icon> List
+  </a>
+  <a mat-stroked-button routerLink="/deals/pipeline">
+    <mat-icon>view_kanban</mat-icon> Pipeline
+  </a>
+</div>
+
 <div class="deals-filters">
   <mat-form-field appearance="outline" class="deals-filters__search">
     <mat-label>Search deals</mat-label>

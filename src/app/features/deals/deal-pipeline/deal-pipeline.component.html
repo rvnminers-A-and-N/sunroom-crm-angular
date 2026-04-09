@@ -5,6 +5,15 @@
   (actionClick)="openCreateDialog()"
 />
 
+<div class="view-toggle">
+  <a mat-stroked-button routerLink="/deals">
+    <mat-icon>view_list</mat-icon> List
+  </a>
+  <a mat-stroked-button routerLink="/deals/pipeline" class="view-toggle__active">
+    <mat-icon>view_kanban</mat-icon> Pipeline
+  </a>
+</div>
+
 <div class="pipeline">
   @for (stage of stages(); track stage.stage) {
     <div class="pipeline__column">
