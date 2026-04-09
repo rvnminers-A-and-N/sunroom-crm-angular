@@ -1,0 +1,103 @@
+<app-page-header
+  title="Contacts"
+  [subtitle]="meta().total + ' total'"
+  actionLabel="Add Contact"
+  (actionClick)="openCreateDialog()"
+/>
+
+<div class="contacts-filters">
+  <mat-form-field appearance="outline" class="contacts-filters__search">
+    <mat-label>Search contacts</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [ngModel]="search" (ngModelChange)="onSearch($event)" placeholder="Name or email..." />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="contacts-filters__tag">
+    <mat-label>Filter by tag</mat-label>
+    <mat-select [ngModel]="selectedTagId" (ngModelChange)="onTagFilter($event)">
+      <mat-option [value]="null">All tags</mat-option>
+      @for (tag of tags(); track tag.id) {
+        <mat-option [value]="tag.id">{{ tag.name }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@if (contacts().length > 0) {
+  <div class="contacts-table sr-card">
+    <table mat-table [dataSource]="contacts()">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let c">
+          <span class="contacts-table__name">{{ c.firstName }} {{ c.lastName }}</span>
+          @if (c.title) {
+            <span class="contacts-table__title">{{ c.title }}</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let c">{{ c.email || '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="phone">
+        <th mat-header-cell *matHeaderCellDef>Phone</th>
+        <td mat-cell *matCellDef="let c">{{ c.phone || '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="company">
+        <th mat-header-cell *matHeaderCellDef>Company</th>
+        <td mat-cell *matCellDef="let c">{{ c.companyName || '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="tags">
+        <th mat-header-cell *matHeaderCellDef>Tags</th>
+        <td mat-cell *matCellDef="let c">
+          <div class="contacts-table__tags">
+            @for (tag of c.tags; track tag.id) {
+              <app-tag-chip [tag]="tag" />
+            }
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let c">
+          <button mat-icon-button (click)="openEditDialog(c, $event)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="confirmDelete(c, $event)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="contacts-table__row"
+        (click)="onRowClick(row)"
+      ></tr>
+    </table>
+
+    <mat-paginator
+      [length]="meta().total"
+      [pageSize]="meta().perPage"
+      [pageIndex]="meta().currentPage - 1"
+      [pageSizeOptions]="[10, 25, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons
+    />
+  </div>
+} @else if (!loading()) {
+  <app-empty-state
+    icon="people"
+    title="No contacts yet"
+    message="Add your first contact to get started."
+    actionLabel="Add Contact"
+    (actionClick)="openCreateDialog()"
+  />
+}
