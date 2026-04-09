@@ -1,0 +1,38 @@
+.companies-filters {
+  margin-bottom: 16px;
+
+  &__search {
+    width: 100%;
+    max-width: 400px;
+  }
+}
+
+.companies-table {
+  overflow: hidden;
+
+  table {
+    width: 100%;
+  }
+
+  &__row {
+    cursor: pointer;
+
+    &:hover {
+      background: var(--sr-cream);
+    }
+  }
+
+  &__name {
+    font-weight: 600;
+    color: var(--sr-text);
+  }
+
+  td.mat-mdc-cell {
+    font-size: 14px;
+  }
+
+  th.mat-mdc-header-cell {
+    font-weight: 600;
+    color: var(--sr-text);
+  }
+}

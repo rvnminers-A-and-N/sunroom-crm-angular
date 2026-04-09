@@ -1,0 +1,90 @@
+<app-page-header
+  title="Companies"
+  [subtitle]="meta().total + ' total'"
+  actionLabel="Add Company"
+  (actionClick)="openCreateDialog()"
+/>
+
+<div class="companies-filters">
+  <mat-form-field appearance="outline" class="companies-filters__search">
+    <mat-label>Search companies</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [ngModel]="search" (ngModelChange)="onSearch($event)" placeholder="Company name..." />
+  </mat-form-field>
+</div>
+
+@if (companies().length > 0) {
+  <div class="companies-table sr-card">
+    <table mat-table [dataSource]="companies()">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let c">
+          <span class="companies-table__name">{{ c.name }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="industry">
+        <th mat-header-cell *matHeaderCellDef>Industry</th>
+        <td mat-cell *matCellDef="let c">{{ c.industry || '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="location">
+        <th mat-header-cell *matHeaderCellDef>Location</th>
+        <td mat-cell *matCellDef="let c">
+          @if (c.city || c.state) {
+            {{ c.city }}{{ c.city && c.state ? ', ' : '' }}{{ c.state }}
+          } @else {
+            —
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="contacts">
+        <th mat-header-cell *matHeaderCellDef>Contacts</th>
+        <td mat-cell *matCellDef="let c">{{ c.contactCount }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="deals">
+        <th mat-header-cell *matHeaderCellDef>Deals</th>
+        <td mat-cell *matCellDef="let c">{{ c.dealCount }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let c">
+          <button mat-icon-button (click)="openEditDialog(c, $event)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="confirmDelete(c, $event)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="companies-table__row"
+        (click)="onRowClick(row)"
+      ></tr>
+    </table>
+
+    <mat-paginator
+      [length]="meta().total"
+      [pageSize]="meta().perPage"
+      [pageIndex]="meta().currentPage - 1"
+      [pageSizeOptions]="[10, 25, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons
+    />
+  </div>
+} @else if (!loading()) {
+  <app-empty-state
+    icon="business"
+    title="No companies yet"
+    message="Add your first company to get started."
+    actionLabel="Add Company"
+    (actionClick)="openCreateDialog()"
+  />
+}
