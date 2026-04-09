@@ -1,0 +1,130 @@
+<app-page-header
+  title="AI Assistant"
+  subtitle="Smart search and text summarization powered by AI"
+/>
+
+<mat-tab-group>
+  <mat-tab label="Smart Search">
+    <div class="ai-section">
+      <mat-card>
+        <mat-card-content>
+          <p class="ai-section__desc">
+            Ask natural language questions about your contacts and activities.
+          </p>
+          <div class="ai-section__input-row">
+            <mat-form-field appearance="outline" class="ai-section__input">
+              <mat-label>Ask a question...</mat-label>
+              <mat-icon matPrefix>auto_awesome</mat-icon>
+              <input
+                matInput
+                [(ngModel)]="searchQuery"
+                (keydown.enter)="onSearch()"
+                placeholder="e.g. Who did I talk to last week?"
+              />
+            </mat-form-field>
+            <button
+              mat-flat-button
+              color="primary"
+              (click)="onSearch()"
+              [disabled]="searching() || !searchQuery.trim()"
+            >
+              @if (searching()) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                Search
+              }
+            </button>
+          </div>
+
+          @if (searchResult(); as result) {
+            <div class="search-results">
+              @if (result.interpretation) {
+                <div class="search-results__interpretation">
+                  <mat-icon>psychology</mat-icon>
+                  <span>{{ result.interpretation }}</span>
+                </div>
+              }
+
+              @if (result.contacts.length > 0) {
+                <h4>Contacts ({{ result.contacts.length }})</h4>
+                <div class="search-results__list">
+                  @for (c of result.contacts; track c.id) {
+                    <a [routerLink]="['/contacts', c.id]" class="search-results__item">
+                      <mat-icon>person</mat-icon>
+                      <span>{{ c.firstName }} {{ c.lastName }}</span>
+                      @if (c.companyName) {
+                        <span class="search-results__meta">{{ c.companyName }}</span>
+                      }
+                    </a>
+                  }
+                </div>
+              }
+
+              @if (result.activities.length > 0) {
+                <h4>Activities ({{ result.activities.length }})</h4>
+                <div class="search-results__list">
+                  @for (a of result.activities; track a.id) {
+                    <div class="search-results__item">
+                      <app-activity-icon [type]="a.type" />
+                      <span>{{ a.subject }}</span>
+                      <span class="search-results__meta">{{ a.type }}</span>
+                    </div>
+                  }
+                </div>
+              }
+
+              @if (result.contacts.length === 0 && result.activities.length === 0) {
+                <p class="search-results__empty">No results found. Try rephrasing your question.</p>
+              }
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Summarize">
+    <div class="ai-section">
+      <mat-card>
+        <mat-card-content>
+          <p class="ai-section__desc">
+            Paste meeting notes, emails, or any text to get a concise summary.
+          </p>
+          <mat-form-field appearance="outline" class="ai-section__textarea">
+            <mat-label>Paste text to summarize...</mat-label>
+            <textarea
+              matInput
+              [(ngModel)]="summarizeText"
+              rows="6"
+              placeholder="Paste your meeting notes, email thread, or any text here..."
+            ></textarea>
+          </mat-form-field>
+          <div class="ai-section__action">
+            <button
+              mat-flat-button
+              color="primary"
+              (click)="onSummarize()"
+              [disabled]="summarizing() || !summarizeText.trim()"
+            >
+              @if (summarizing()) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                Summarize
+              }
+            </button>
+          </div>
+
+          @if (summaryResult(); as summary) {
+            <div class="summary-result">
+              <h4>
+                <mat-icon>auto_awesome</mat-icon>
+                Summary
+              </h4>
+              <p>{{ summary }}</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+</mat-tab-group>

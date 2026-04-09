@@ -1,0 +1,144 @@
+.ai-section {
+  padding: 24px 0;
+
+  &__desc {
+    font-size: 14px;
+    color: #6b7280;
+    margin: 0 0 20px;
+  }
+
+  &__input-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  &__input {
+    flex: 1;
+  }
+
+  &__textarea {
+    width: 100%;
+  }
+
+  &__action {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 16px;
+  }
+}
+
+.search-results {
+  margin-top: 24px;
+  border-top: 1px solid var(--sr-border);
+  padding-top: 20px;
+
+  &__interpretation {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    background: #f0fdf4;
+    border-radius: 8px;
+    padding: 12px 16px;
+    margin-bottom: 20px;
+    font-size: 14px;
+    color: var(--sr-text);
+
+    mat-icon {
+      color: var(--sr-primary);
+      font-size: 20px;
+      width: 20px;
+      height: 20px;
+      margin-top: 1px;
+    }
+  }
+
+  h4 {
+    font-size: 13px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin: 16px 0 8px;
+  }
+
+  &__list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  &__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    color: var(--sr-text);
+    text-decoration: none;
+    transition: background 0.15s ease;
+
+    &:hover {
+      background: #f9fafb;
+    }
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+      color: #9ca3af;
+    }
+  }
+
+  &__meta {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-left: auto;
+  }
+
+  &__empty {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 14px;
+    padding: 24px 0;
+  }
+}
+
+.summary-result {
+  margin-top: 24px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border-left: 3px solid var(--sr-primary);
+  padding: 16px 20px;
+
+  h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--sr-primary);
+    margin: 0 0 10px;
+
+    mat-icon {
+      font-size: 18px;
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  p {
+    font-size: 14px;
+    color: var(--sr-text);
+    margin: 0;
+    line-height: 1.6;
+    white-space: pre-wrap;
+  }
+}
+
+@media (max-width: 600px) {
+  .ai-section__input-row {
+    flex-direction: column;
+  }
+}
