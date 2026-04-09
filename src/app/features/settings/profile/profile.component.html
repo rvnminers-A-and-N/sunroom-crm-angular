@@ -1,0 +1,77 @@
+<app-page-header title="Settings" subtitle="Profile and tag management" />
+
+<div class="settings-layout">
+  <!-- Profile Card -->
+  <mat-card class="profile-card">
+    <mat-card-content>
+      <h3>Profile</h3>
+      @if (user(); as u) {
+        <div class="profile-info">
+          <div class="profile-info__avatar">
+            {{ u.name.charAt(0).toUpperCase() }}
+          </div>
+          <div class="profile-info__details">
+            <span class="profile-info__name">{{ u.name }}</span>
+            <span class="profile-info__email">{{ u.email }}</span>
+            <span class="profile-info__role">{{ u.role }}</span>
+            <span class="profile-info__date">Member since {{ u.createdAt | date:'mediumDate' }}</span>
+          </div>
+        </div>
+      }
+    </mat-card-content>
+  </mat-card>
+
+  <!-- Tag Management -->
+  <mat-card class="tags-card">
+    <mat-card-content>
+      <h3>Tags</h3>
+      <p class="tags-card__desc">Manage tags used to organize your contacts.</p>
+
+      <!-- Create Tag -->
+      <div class="tag-form">
+        <mat-form-field appearance="outline" class="tag-form__name">
+          <mat-label>Tag name</mat-label>
+          <input matInput [(ngModel)]="newTagName" placeholder="e.g. VIP" />
+        </mat-form-field>
+        <input type="color" [(ngModel)]="newTagColor" class="tag-form__color" title="Tag color" />
+        <button mat-flat-button color="primary" (click)="createTag()" [disabled]="!newTagName.trim()">
+          Add Tag
+        </button>
+      </div>
+
+      <!-- Tag List -->
+      <div class="tag-list">
+        @for (tag of tags(); track tag.id) {
+          <div class="tag-list__item">
+            @if (editingTag()?.id === tag.id) {
+              <div class="tag-form tag-form--inline">
+                <mat-form-field appearance="outline" class="tag-form__name">
+                  <input matInput [(ngModel)]="editTagName" />
+                </mat-form-field>
+                <input type="color" [(ngModel)]="editTagColor" class="tag-form__color" />
+                <button mat-icon-button color="primary" (click)="saveEditTag()">
+                  <mat-icon>check</mat-icon>
+                </button>
+                <button mat-icon-button (click)="cancelEditTag()">
+                  <mat-icon>close</mat-icon>
+                </button>
+              </div>
+            } @else {
+              <app-tag-chip [tag]="tag" />
+              <div class="tag-list__actions">
+                <button mat-icon-button (click)="startEditTag(tag)">
+                  <mat-icon>edit</mat-icon>
+                </button>
+                <button mat-icon-button (click)="confirmDeleteTag(tag)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            }
+          </div>
+        } @empty {
+          <p class="tag-list__empty">No tags created yet.</p>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+</div>
