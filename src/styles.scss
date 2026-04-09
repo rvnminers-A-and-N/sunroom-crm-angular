@@ -72,6 +72,89 @@ body {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
+// Smooth transitions for interactive elements
+a, button {
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+// Mat-card consistent styling
+.mat-mdc-card {
+  border: 1px solid var(--sr-border);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06) !important;
+  border-radius: 12px !important;
+}
+
+// Table horizontal scroll on small screens
+.sr-card {
+  table {
+    min-width: 600px;
+  }
+
+  &:has(table) {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+// Global mat-table row hover
+.mat-mdc-row:hover {
+  background: #f9fafb;
+}
+
+// Loading spinner utility
+.sr-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  color: #9ca3af;
+  font-size: 14px;
+  gap: 12px;
+}
+
+// Page-level skeleton pulse animation
+@keyframes sr-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+.sr-skeleton {
+  background: #e5e7eb;
+  border-radius: 6px;
+  animation: sr-pulse 1.5s ease-in-out infinite;
+}
+
+// Mobile sidebar backdrop
+.sr-backdrop {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 99;
+}
+
+@media (max-width: 768px) {
+  .sr-backdrop--visible {
+    display: block;
+  }
+}
+
+// Detail page header responsive
+@media (max-width: 640px) {
+  .page-header {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+
+// Mat-stepper horizontal scroll on small screens
+@media (max-width: 768px) {
+  .mat-horizontal-stepper-header-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
 // Scrollbar styling
 ::-webkit-scrollbar {
   width: 6px;

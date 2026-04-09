@@ -1,4 +1,9 @@
 <div class="layout" [class.layout--collapsed]="sidebarCollapsed()">
+  <div
+    class="sr-backdrop"
+    [class.sr-backdrop--visible]="!sidebarCollapsed()"
+    (click)="toggleSidebar()"
+  ></div>
   <app-sidebar [collapsed]="sidebarCollapsed()" (toggle)="toggleSidebar()" />
   <div class="layout__main">
     <app-toolbar (menuToggle)="toggleSidebar()" />

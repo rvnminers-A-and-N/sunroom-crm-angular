@@ -1,3 +1,18 @@
+.view-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+
+  a {
+    text-decoration: none;
+  }
+
+  &__active {
+    background: rgba(2, 121, 95, 0.08) !important;
+    color: var(--sr-primary) !important;
+  }
+}
+
 .pipeline {
   display: flex;
   gap: 16px;
