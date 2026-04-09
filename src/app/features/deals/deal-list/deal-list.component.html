@@ -1,0 +1,101 @@
+<app-page-header
+  title="Deals"
+  [subtitle]="meta().total + ' total'"
+  actionLabel="Add Deal"
+  (actionClick)="openCreateDialog()"
+/>
+
+<div class="deals-filters">
+  <mat-form-field appearance="outline" class="deals-filters__search">
+    <mat-label>Search deals</mat-label>
+    <mat-icon matPrefix>search</mat-icon>
+    <input matInput [ngModel]="search" (ngModelChange)="onSearch($event)" placeholder="Title..." />
+  </mat-form-field>
+
+  <mat-form-field appearance="outline" class="deals-filters__stage">
+    <mat-label>Filter by stage</mat-label>
+    <mat-select [ngModel]="selectedStage" (ngModelChange)="onStageFilter($event)">
+      <mat-option value="">All stages</mat-option>
+      @for (stage of stages; track stage) {
+        <mat-option [value]="stage">{{ stage }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@if (deals().length > 0) {
+  <div class="deals-table sr-card">
+    <table mat-table [dataSource]="deals()">
+      <ng-container matColumnDef="title">
+        <th mat-header-cell *matHeaderCellDef>Title</th>
+        <td mat-cell *matCellDef="let d">
+          <span class="deals-table__title">{{ d.title }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="value">
+        <th mat-header-cell *matHeaderCellDef>Value</th>
+        <td mat-cell *matCellDef="let d">{{ d.value | currency:'USD':'symbol':'1.0-0' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="stage">
+        <th mat-header-cell *matHeaderCellDef>Stage</th>
+        <td mat-cell *matCellDef="let d">
+          <span [class]="getStageClass(d.stage)">{{ d.stage }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="contact">
+        <th mat-header-cell *matHeaderCellDef>Contact</th>
+        <td mat-cell *matCellDef="let d">{{ d.contactName }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="company">
+        <th mat-header-cell *matHeaderCellDef>Company</th>
+        <td mat-cell *matCellDef="let d">{{ d.companyName || '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="expectedClose">
+        <th mat-header-cell *matHeaderCellDef>Expected Close</th>
+        <td mat-cell *matCellDef="let d">{{ d.expectedCloseDate ? (d.expectedCloseDate | date:'mediumDate') : '—' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let d">
+          <button mat-icon-button (click)="openEditDialog(d, $event)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="confirmDelete(d, $event)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr
+        mat-row
+        *matRowDef="let row; columns: displayedColumns"
+        class="deals-table__row"
+        (click)="onRowClick(row)"
+      ></tr>
+    </table>
+
+    <mat-paginator
+      [length]="meta().total"
+      [pageSize]="meta().perPage"
+      [pageIndex]="meta().currentPage - 1"
+      [pageSizeOptions]="[10, 25, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons
+    />
+  </div>
+} @else if (!loading()) {
+  <app-empty-state
+    icon="handshake"
+    title="No deals yet"
+    message="Create your first deal to start tracking your pipeline."
+    actionLabel="Add Deal"
+    (actionClick)="openCreateDialog()"
+  />
+}

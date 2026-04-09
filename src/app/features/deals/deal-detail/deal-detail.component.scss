@@ -1,0 +1,218 @@
+.deal-detail {
+  &__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  &__title {
+    flex: 1;
+
+    h1 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0;
+      color: var(--sr-text);
+    }
+  }
+
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+  }
+
+  &__value {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--sr-primary);
+  }
+
+  &__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  &__stepper {
+    padding: 16px 24px;
+    margin-bottom: 24px;
+    overflow: hidden;
+  }
+
+  &__body {
+    display: grid;
+    grid-template-columns: 350px 1fr;
+    gap: 24px;
+    align-items: start;
+  }
+
+  &__notes {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
+
+    h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: #6b7280;
+      margin: 0 0 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    p {
+      font-size: 14px;
+      color: var(--sr-text);
+      margin: 0;
+      white-space: pre-wrap;
+    }
+  }
+
+  &__panels {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+}
+
+.info-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--sr-text);
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    color: #9ca3af;
+    margin-top: 2px;
+  }
+
+  a {
+    color: var(--sr-primary);
+    text-decoration: none;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+}
+
+.stage-badge {
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 10px;
+
+  &--lead { background: #eff6ff; color: #2563eb; }
+  &--qualified { background: #f0fdf4; color: #16a34a; }
+  &--proposal { background: #fefce8; color: #ca8a04; }
+  &--negotiation { background: #fff7ed; color: #ea580c; }
+  &--won { background: rgba(2, 121, 95, 0.1); color: var(--sr-primary); }
+  &--lost { background: #fef2f2; color: #dc2626; }
+}
+
+.panel-section {
+  padding: 20px;
+
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin: 0 0 16px;
+    color: var(--sr-text);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  &__ai-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+    color: var(--sr-primary);
+  }
+}
+
+.panel-empty {
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+  padding: 16px 0;
+}
+
+.activity-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.activity-item {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+
+  &__content {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__subject {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--sr-text);
+  }
+
+  &__time {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-left: 8px;
+  }
+
+  &__body {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 4px 0 0;
+    white-space: pre-wrap;
+  }
+}
+
+.insights-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.insight-item {
+  padding: 12px;
+  background: #f0fdf4;
+  border-radius: 8px;
+  border-left: 3px solid var(--sr-primary);
+
+  p {
+    font-size: 14px;
+    color: var(--sr-text);
+    margin: 0 0 6px;
+    line-height: 1.5;
+  }
+
+  &__date {
+    font-size: 11px;
+    color: #9ca3af;
+  }
+}
+
+@media (max-width: 1024px) {
+  .deal-detail__body {
+    grid-template-columns: 1fr;
+  }
+}
