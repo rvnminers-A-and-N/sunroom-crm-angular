@@ -1,0 +1,51 @@
+<aside class="sidebar" [class.sidebar--collapsed]="collapsed()">
+  <div class="sidebar__header">
+    <div class="sidebar__logo">
+      <span class="sidebar__logo-icon sr-gradient-bg">S</span>
+      @if (!collapsed()) {
+        <span class="sidebar__logo-text">Sunroom <span class="sr-gradient-text">CRM</span></span>
+      }
+    </div>
+    <button mat-icon-button class="sidebar__toggle" (click)="toggle.emit()">
+      <mat-icon>{{ collapsed() ? 'chevron_right' : 'chevron_left' }}</mat-icon>
+    </button>
+  </div>
+
+  <div class="sidebar__gradient-line"></div>
+
+  <nav class="sidebar__nav">
+    @for (item of navItems; track item.route) {
+      @if (!item.adminOnly || (currentUser$ | async)?.role === 'Admin') {
+        <a
+          class="sidebar__link"
+          [routerLink]="item.route"
+          routerLinkActive="sidebar__link--active"
+          [matTooltip]="collapsed() ? item.label : ''"
+          matTooltipPosition="right"
+        >
+          <mat-icon>{{ item.icon }}</mat-icon>
+          @if (!collapsed()) {
+            <span>{{ item.label }}</span>
+          }
+        </a>
+      }
+    }
+  </nav>
+
+  <div class="sidebar__footer">
+    @if (currentUser$ | async; as user) {
+      <div class="sidebar__user">
+        <div class="sidebar__avatar">{{ user.name | initials }}</div>
+        @if (!collapsed()) {
+          <div class="sidebar__user-info">
+            <span class="sidebar__user-name">{{ user.name }}</span>
+            <span class="sidebar__user-role">{{ user.role }}</span>
+          </div>
+          <button mat-icon-button (click)="logout()" matTooltip="Logout">
+            <mat-icon>logout</mat-icon>
+          </button>
+        }
+      </div>
+    }
+  </div>
+</aside>

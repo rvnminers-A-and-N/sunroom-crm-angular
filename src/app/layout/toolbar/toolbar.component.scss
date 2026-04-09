@@ -1,0 +1,20 @@
+.toolbar {
+  display: flex;
+  align-items: center;
+  padding: 8px 16px;
+  background: #ffffff;
+  border-bottom: 1px solid var(--sr-border);
+  min-height: 48px;
+
+  &__menu-btn {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  .toolbar {
+    &__menu-btn {
+      display: inline-flex;
+    }
+  }
+}
