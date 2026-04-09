@@ -1,0 +1,56 @@
+<app-page-header title="User Management" subtitle="Manage user accounts and roles (Admin only)" />
+
+@if (users().length > 0) {
+  <div class="users-table sr-card">
+    <table mat-table [dataSource]="users()">
+      <ng-container matColumnDef="name">
+        <th mat-header-cell *matHeaderCellDef>Name</th>
+        <td mat-cell *matCellDef="let u">
+          <div class="users-table__user">
+            <span class="users-table__avatar">{{ u.name.charAt(0).toUpperCase() }}</span>
+            <span class="users-table__name">{{ u.name }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="email">
+        <th mat-header-cell *matHeaderCellDef>Email</th>
+        <td mat-cell *matCellDef="let u">{{ u.email }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="role">
+        <th mat-header-cell *matHeaderCellDef>Role</th>
+        <td mat-cell *matCellDef="let u">
+          <mat-select
+            [value]="u.role"
+            (selectionChange)="onRoleChange(u, $event.value)"
+            class="users-table__role-select"
+          >
+            @for (role of roles; track role) {
+              <mat-option [value]="role">{{ role }}</mat-option>
+            }
+          </mat-select>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="createdAt">
+        <th mat-header-cell *matHeaderCellDef>Joined</th>
+        <td mat-cell *matCellDef="let u">{{ u.createdAt | date:'mediumDate' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let u">
+          <button mat-icon-button color="warn" (click)="confirmDelete(u)" matTooltip="Delete user">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+  </div>
+} @else if (!loading()) {
+  <p style="text-align: center; color: #9ca3af; padding: 48px">No users found.</p>
+}
