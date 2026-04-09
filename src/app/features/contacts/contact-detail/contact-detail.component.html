@@ -1,0 +1,108 @@
+@if (contact(); as c) {
+  <div class="contact-detail">
+    <div class="contact-detail__header">
+      <button mat-icon-button routerLink="/contacts">
+        <mat-icon>arrow_back</mat-icon>
+      </button>
+      <div class="contact-detail__title">
+        <h1>{{ c.firstName }} {{ c.lastName }}</h1>
+        @if (c.title) {
+          <span class="contact-detail__subtitle">{{ c.title }}</span>
+        }
+        @if (c.company) {
+          <span class="contact-detail__subtitle">
+            at <a [routerLink]="['/companies', c.company.id]">{{ c.company.name }}</a>
+          </span>
+        }
+      </div>
+      <div class="contact-detail__actions">
+        <button mat-stroked-button (click)="openEditDialog()">
+          <mat-icon>edit</mat-icon> Edit
+        </button>
+        <button mat-stroked-button color="warn" (click)="confirmDelete()">
+          <mat-icon>delete</mat-icon> Delete
+        </button>
+      </div>
+    </div>
+
+    <div class="contact-detail__body">
+      <mat-card class="contact-detail__info">
+        <mat-card-content>
+          <div class="info-grid">
+            <div class="info-item">
+              <mat-icon>email</mat-icon>
+              <span>{{ c.email || 'No email' }}</span>
+            </div>
+            <div class="info-item">
+              <mat-icon>phone</mat-icon>
+              <span>{{ c.phone || 'No phone' }}</span>
+            </div>
+            <div class="info-item">
+              <mat-icon>calendar_today</mat-icon>
+              <span>Added {{ c.createdAt | date:'mediumDate' }}</span>
+            </div>
+            @if (c.lastContactedAt) {
+              <div class="info-item">
+                <mat-icon>schedule</mat-icon>
+                <span>Last contacted {{ c.lastContactedAt | relativeTime }}</span>
+              </div>
+            }
+          </div>
+          @if (c.tags.length > 0) {
+            <div class="contact-detail__tags">
+              @for (tag of c.tags; track tag.id) {
+                <app-tag-chip [tag]="tag" />
+              }
+            </div>
+          }
+          @if (c.notes) {
+            <div class="contact-detail__notes">
+              <h4>Notes</h4>
+              <p>{{ c.notes }}</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+
+      <mat-tab-group class="contact-detail__tabs">
+        <mat-tab label="Deals ({{ c.deals.length }})">
+          @if (c.deals.length > 0) {
+            <div class="tab-content">
+              @for (deal of c.deals; track deal.id) {
+                <a [routerLink]="['/deals', deal.id]" class="deal-item sr-card">
+                  <div class="deal-item__info">
+                    <span class="deal-item__title">{{ deal.title }}</span>
+                    <span class="deal-item__stage" [attr.data-stage]="deal.stage">{{ deal.stage }}</span>
+                  </div>
+                  <span class="deal-item__value">{{ deal.value | currency:'USD':'symbol':'1.0-0' }}</span>
+                </a>
+              }
+            </div>
+          } @else {
+            <p class="tab-empty">No deals yet</p>
+          }
+        </mat-tab>
+
+        <mat-tab label="Activities ({{ c.activities.length }})">
+          @if (c.activities.length > 0) {
+            <div class="tab-content">
+              @for (activity of c.activities; track activity.id) {
+                <div class="activity-item">
+                  <app-activity-icon [type]="activity.type" />
+                  <div class="activity-item__info">
+                    <span class="activity-item__subject">{{ activity.subject }}</span>
+                    <span class="activity-item__meta">{{ activity.type }} &middot; {{ activity.occurredAt | relativeTime }}</span>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="tab-empty">No activities yet</p>
+          }
+        </mat-tab>
+      </mat-tab-group>
+    </div>
+  </div>
+} @else if (loading()) {
+  <p style="text-align: center; color: #9ca3af; padding: 48px">Loading contact...</p>
+}
