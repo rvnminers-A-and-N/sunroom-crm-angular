@@ -1,0 +1,100 @@
+<app-page-header
+  title="Activities"
+  [subtitle]="meta().total + ' total'"
+  actionLabel="Log Activity"
+  (actionClick)="openCreateDialog()"
+/>
+
+<div class="activities-filters">
+  <mat-form-field appearance="outline" class="activities-filters__type">
+    <mat-label>Filter by type</mat-label>
+    <mat-select [ngModel]="selectedType" (ngModelChange)="onTypeFilter($event)">
+      <mat-option value="">All types</mat-option>
+      @for (type of types; track type) {
+        <mat-option [value]="type">{{ type }}</mat-option>
+      }
+    </mat-select>
+  </mat-form-field>
+</div>
+
+@if (activities().length > 0) {
+  <div class="activities-table sr-card">
+    <table mat-table [dataSource]="activities()">
+      <ng-container matColumnDef="type">
+        <th mat-header-cell *matHeaderCellDef>Type</th>
+        <td mat-cell *matCellDef="let a">
+          <div class="activities-table__type">
+            <app-activity-icon [type]="a.type" />
+            <span>{{ a.type }}</span>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="subject">
+        <th mat-header-cell *matHeaderCellDef>Subject</th>
+        <td mat-cell *matCellDef="let a">
+          <span class="activities-table__subject">{{ a.subject }}</span>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="contact">
+        <th mat-header-cell *matHeaderCellDef>Contact</th>
+        <td mat-cell *matCellDef="let a">
+          @if (a.contactId) {
+            <a [routerLink]="['/contacts', a.contactId]">{{ a.contactName }}</a>
+          } @else {
+            <span>—</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="deal">
+        <th mat-header-cell *matHeaderCellDef>Deal</th>
+        <td mat-cell *matCellDef="let a">
+          @if (a.dealId) {
+            <a [routerLink]="['/deals', a.dealId]">{{ a.dealTitle }}</a>
+          } @else {
+            <span>—</span>
+          }
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="occurredAt">
+        <th mat-header-cell *matHeaderCellDef>Date</th>
+        <td mat-cell *matCellDef="let a">{{ a.occurredAt | date:'medium' }}</td>
+      </ng-container>
+
+      <ng-container matColumnDef="actions">
+        <th mat-header-cell *matHeaderCellDef></th>
+        <td mat-cell *matCellDef="let a">
+          <button mat-icon-button (click)="openEditDialog(a, $event)" matTooltip="Edit">
+            <mat-icon>edit</mat-icon>
+          </button>
+          <button mat-icon-button (click)="confirmDelete(a, $event)" matTooltip="Delete">
+            <mat-icon>delete</mat-icon>
+          </button>
+        </td>
+      </ng-container>
+
+      <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+      <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+    </table>
+
+    <mat-paginator
+      [length]="meta().total"
+      [pageSize]="meta().perPage"
+      [pageIndex]="meta().currentPage - 1"
+      [pageSizeOptions]="[10, 25, 50]"
+      (page)="onPage($event)"
+      showFirstLastButtons
+    />
+  </div>
+} @else if (!loading()) {
+  <app-empty-state
+    icon="history"
+    title="No activities yet"
+    message="Log your first activity to start tracking interactions."
+    actionLabel="Log Activity"
+    (actionClick)="openCreateDialog()"
+  />
+}

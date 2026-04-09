@@ -1,0 +1,73 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit Activity' : 'Log Activity' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" id="activityForm" (ngSubmit)="onSubmit()">
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Type</mat-label>
+        <mat-select formControlName="type">
+          @for (type of types; track type) {
+            <mat-option [value]="type">{{ type }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Date</mat-label>
+        <input matInput [matDatepicker]="picker" formControlName="occurredAt" />
+        <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+        <mat-datepicker #picker></mat-datepicker>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Subject</mat-label>
+      <input matInput formControlName="subject" />
+      @if (form.controls.subject.hasError('required')) {
+        <mat-error>Required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Contact</mat-label>
+      <mat-select formControlName="contactId">
+        <mat-option [value]="null">None</mat-option>
+        @for (contact of contacts(); track contact.id) {
+          <mat-option [value]="contact.id">{{ contact.firstName }} {{ contact.lastName }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Deal</mat-label>
+      <mat-select formControlName="dealId">
+        <mat-option [value]="null">None</mat-option>
+        @for (deal of deals(); track deal.id) {
+          <mat-option [value]="deal.id">{{ deal.title }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Body</mat-label>
+      <textarea matInput formControlName="body" rows="4"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    form="activityForm"
+    [disabled]="saving()"
+  >
+    @if (saving()) {
+      <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+      {{ isEdit ? 'Save' : 'Log' }}
+    }
+  </button>
+</mat-dialog-actions>
