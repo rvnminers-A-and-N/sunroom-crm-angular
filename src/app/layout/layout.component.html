@@ -1,0 +1,9 @@
+<div class="layout" [class.layout--collapsed]="sidebarCollapsed()">
+  <app-sidebar [collapsed]="sidebarCollapsed()" (toggle)="toggleSidebar()" />
+  <div class="layout__main">
+    <app-toolbar (menuToggle)="toggleSidebar()" />
+    <main class="layout__content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

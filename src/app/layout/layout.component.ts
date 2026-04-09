@@ -1,27 +1,19 @@
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { SidebarComponent } from './sidebar/sidebar.component';
+import { ToolbarComponent } from './toolbar/toolbar.component';
 
 @Component({
   selector: 'app-layout',
   standalone: true,
-  imports: [RouterOutlet],
-  template: `
-    <div class="layout">
-      <main class="layout__content">
-        <router-outlet />
-      </main>
-    </div>
-  `,
-  styles: `
-    .layout {
-      display: flex;
-      height: 100vh;
-    }
-    .layout__content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 24px;
-    }
-  `,
+  imports: [RouterOutlet, SidebarComponent, ToolbarComponent],
+  templateUrl: './layout.component.html',
+  styleUrl: './layout.component.scss',
 })
-export class LayoutComponent {}
+export class LayoutComponent {
+  sidebarCollapsed = signal(false);
+
+  toggleSidebar(): void {
+    this.sidebarCollapsed.update((v) => !v);
+  }
+}
