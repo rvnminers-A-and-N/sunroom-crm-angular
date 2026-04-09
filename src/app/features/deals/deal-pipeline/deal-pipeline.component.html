@@ -1,0 +1,37 @@
+<app-page-header
+  title="Pipeline"
+  subtitle="Drag deals between stages"
+  actionLabel="Add Deal"
+  (actionClick)="openCreateDialog()"
+/>
+
+<div class="pipeline">
+  @for (stage of stages(); track stage.stage) {
+    <div class="pipeline__column">
+      <div class="pipeline__header" [style.border-color]="getStageColor(stage.stage)">
+        <div class="pipeline__header-top">
+          <span class="pipeline__stage-name">{{ stage.stage }}</span>
+          <span class="pipeline__count">{{ stage.count }}</span>
+        </div>
+        <span class="pipeline__total">{{ stage.totalValue | currencyShort }}</span>
+      </div>
+
+      <div
+        cdkDropList
+        [id]="'stage-' + stage.stage"
+        [cdkDropListData]="stage.deals"
+        [cdkDropListConnectedTo]="getConnectedLists()"
+        (cdkDropListDropped)="onDrop($event, stage)"
+        class="pipeline__cards"
+      >
+        @for (deal of stage.deals; track deal.id) {
+          <div cdkDrag [cdkDragData]="deal">
+            <app-deal-card [deal]="deal" />
+          </div>
+        } @empty {
+          <div class="pipeline__empty">No deals</div>
+        }
+      </div>
+    </div>
+  }
+</div>

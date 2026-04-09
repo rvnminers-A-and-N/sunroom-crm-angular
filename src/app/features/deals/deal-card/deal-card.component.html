@@ -1,0 +1,22 @@
+<div class="deal-card" [routerLink]="['/deals', deal().id]">
+  <div class="deal-card__header">
+    <span class="deal-card__title">{{ deal().title }}</span>
+    <span class="deal-card__value">{{ deal().value | currency:'USD':'symbol':'1.0-0' }}</span>
+  </div>
+  <div class="deal-card__contact">
+    <mat-icon>person</mat-icon>
+    <span>{{ deal().contactName }}</span>
+  </div>
+  @if (deal().companyName) {
+    <div class="deal-card__company">
+      <mat-icon>business</mat-icon>
+      <span>{{ deal().companyName }}</span>
+    </div>
+  }
+  @if (deal().expectedCloseDate) {
+    <div class="deal-card__date">
+      <mat-icon>event</mat-icon>
+      <span>{{ deal().expectedCloseDate | date:'mediumDate' }}</span>
+    </div>
+  }
+</div>

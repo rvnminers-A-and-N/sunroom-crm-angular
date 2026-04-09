@@ -1,0 +1,83 @@
+<h2 mat-dialog-title>{{ isEdit ? 'Edit Deal' : 'New Deal' }}</h2>
+
+<mat-dialog-content>
+  <form [formGroup]="form" id="dealForm" (ngSubmit)="onSubmit()">
+    <mat-form-field appearance="outline">
+      <mat-label>Title</mat-label>
+      <input matInput formControlName="title" />
+      @if (form.controls.title.hasError('required')) {
+        <mat-error>Required</mat-error>
+      }
+    </mat-form-field>
+
+    <div class="form-row">
+      <mat-form-field appearance="outline">
+        <mat-label>Value ($)</mat-label>
+        <input matInput formControlName="value" type="number" />
+        @if (form.controls.value.hasError('required')) {
+          <mat-error>Required</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Stage</mat-label>
+        <mat-select formControlName="stage">
+          @for (stage of stages; track stage) {
+            <mat-option [value]="stage">{{ stage }}</mat-option>
+          }
+        </mat-select>
+      </mat-form-field>
+    </div>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Contact</mat-label>
+      <mat-select formControlName="contactId">
+        @for (contact of contacts(); track contact.id) {
+          <mat-option [value]="contact.id">{{ contact.firstName }} {{ contact.lastName }}</mat-option>
+        }
+      </mat-select>
+      @if (form.controls.contactId.hasError('required')) {
+        <mat-error>Required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Company</mat-label>
+      <mat-select formControlName="companyId">
+        <mat-option [value]="null">None</mat-option>
+        @for (company of companies(); track company.id) {
+          <mat-option [value]="company.id">{{ company.name }}</mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Expected Close Date</mat-label>
+      <input matInput [matDatepicker]="picker" formControlName="expectedCloseDate" />
+      <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+      <mat-datepicker #picker></mat-datepicker>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline">
+      <mat-label>Notes</mat-label>
+      <textarea matInput formControlName="notes" rows="3"></textarea>
+    </mat-form-field>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button mat-dialog-close>Cancel</button>
+  <button
+    mat-flat-button
+    color="primary"
+    type="submit"
+    form="dealForm"
+    [disabled]="saving()"
+  >
+    @if (saving()) {
+      <mat-spinner diameter="18"></mat-spinner>
+    } @else {
+      {{ isEdit ? 'Save' : 'Create' }}
+    }
+  </button>
+</mat-dialog-actions>
