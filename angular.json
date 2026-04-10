@@ -94,6 +94,42 @@
             }
           },
           "defaultConfiguration": "development"
+        },
+        "test": {
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "buildTarget": "sunroom-crm:build:development",
+            "tsConfig": "tsconfig.spec.json",
+            "runner": "vitest",
+            "setupFiles": ["src/test-setup.ts"],
+            "include": ["src/**/*.spec.ts"]
+          },
+          "configurations": {
+            "coverage": {
+              "coverage": true,
+              "coverageReporters": ["text", "lcov", "html"],
+              "coverageExclude": [
+                "**/*.config.*",
+                "**/main.ts",
+                "**/*.d.ts",
+                "**/environments/**",
+                "**/*.routes.ts",
+                "**/core/models/**",
+                "**/testing/**",
+                "**/test-setup.ts",
+                "dist/**",
+                "coverage/**",
+                "e2e/**"
+              ],
+              "coverageThresholds": {
+                "perFile": false,
+                "statements": 100,
+                "branches": 100,
+                "functions": 100,
+                "lines": 100
+              }
+            }
+          }
         }
       }
     }
