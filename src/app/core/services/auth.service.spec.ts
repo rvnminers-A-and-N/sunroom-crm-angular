@@ -1,13 +1,15 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
 import { Router } from '@angular/router';
-import { http, HttpResponse } from 'msw';
 import { firstValueFrom } from 'rxjs';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { AuthService } from './auth.service';
 import { ApiService } from './api.service';
 import { environment } from '../../../environments/environment';
-import { server } from '../../../testing/msw/server';
 import { makeAuthResponse, makeUser } from '../../../testing/fixtures';
 
 const API = environment.apiUrl;
@@ -15,19 +17,28 @@ const TOKEN_KEY = 'sunroom_token';
 
 describe('AuthService', () => {
   let service: AuthService;
+  let httpMock: HttpTestingController;
   let routerNavigate: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
+    localStorage.clear();
     routerNavigate = vi.fn();
     TestBed.configureTestingModule({
       providers: [
         provideHttpClient(),
+        provideHttpClientTesting(),
         ApiService,
         AuthService,
         { provide: Router, useValue: { navigate: routerNavigate } },
       ],
     });
     service = TestBed.inject(AuthService);
+    httpMock = TestBed.inject(HttpTestingController);
+  });
+
+  afterEach(() => {
+    httpMock.verify();
+    localStorage.clear();
   });
 
   describe('isAuthenticated', () => {
@@ -60,13 +71,21 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('stores the token and emits the user on success', async () => {
-      const fixture = makeAuthResponse({ token: 'login-token', user: makeUser({ id: 7 }) });
-      server.use(http.post(`${API}/auth/login`, () => HttpResponse.json(fixture)));
+      const fixture = makeAuthResponse({
+        token: 'login-token',
+        user: makeUser({ id: 7 }),
+      });
 
-      const response = await firstValueFrom(
+      const result$ = firstValueFrom(
         service.login({ email: 'a@b.c', password: 'pw' }),
       );
 
+      const req = httpMock.expectOne(`${API}/auth/login`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({ email: 'a@b.c', password: 'pw' });
+      req.flush(fixture);
+
+      const response = await result$;
       expect(response).toEqual(fixture);
       expect(localStorage.getItem(TOKEN_KEY)).toBe('login-token');
       expect(service.currentUser).toEqual(fixture.user);
@@ -76,13 +95,25 @@ describe('AuthService', () => {
 
   describe('register', () => {
     it('stores the token and emits the user on success', async () => {
-      const fixture = makeAuthResponse({ token: 'register-token', user: makeUser({ id: 9 }) });
-      server.use(http.post(`${API}/auth/register`, () => HttpResponse.json(fixture)));
+      const fixture = makeAuthResponse({
+        token: 'register-token',
+        user: makeUser({ id: 9 }),
+      });
 
-      const response = await firstValueFrom(
+      const result$ = firstValueFrom(
         service.register({ name: 'X', email: 'x@y.z', password: 'pw12345678' }),
       );
 
+      const req = httpMock.expectOne(`${API}/auth/register`);
+      expect(req.request.method).toBe('POST');
+      expect(req.request.body).toEqual({
+        name: 'X',
+        email: 'x@y.z',
+        password: 'pw12345678',
+      });
+      req.flush(fixture);
+
+      const response = await result$;
       expect(response).toEqual(fixture);
       expect(localStorage.getItem(TOKEN_KEY)).toBe('register-token');
       expect(service.currentUser).toEqual(fixture.user);
@@ -92,10 +123,14 @@ describe('AuthService', () => {
   describe('loadCurrentUser', () => {
     it('updates the current user from the API', async () => {
       const fixture = makeUser({ id: 42, name: 'Loaded' });
-      server.use(http.get(`${API}/auth/me`, () => HttpResponse.json(fixture)));
 
-      const result = await firstValueFrom(service.loadCurrentUser());
+      const result$ = firstValueFrom(service.loadCurrentUser());
 
+      const req = httpMock.expectOne(`${API}/auth/me`);
+      expect(req.request.method).toBe('GET');
+      req.flush(fixture);
+
+      const result = await result$;
       expect(result).toEqual(fixture);
       expect(service.currentUser).toEqual(fixture);
     });
@@ -103,10 +138,13 @@ describe('AuthService', () => {
 
   describe('logout', () => {
     it('clears the token, emits null, and navigates to login', async () => {
-      localStorage.setItem(TOKEN_KEY, 'some-token');
+      // Set up an authenticated state via login
       const fixture = makeAuthResponse();
-      server.use(http.post(`${API}/auth/login`, () => HttpResponse.json(fixture)));
-      await firstValueFrom(service.login({ email: 'a@b.c', password: 'pw' }));
+      const login$ = firstValueFrom(
+        service.login({ email: 'a@b.c', password: 'pw' }),
+      );
+      httpMock.expectOne(`${API}/auth/login`).flush(fixture);
+      await login$;
 
       service.logout();
 

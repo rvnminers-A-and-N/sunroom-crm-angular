@@ -1,117 +1,107 @@
 import { TestBed } from '@angular/core/testing';
 import { HttpParams, provideHttpClient } from '@angular/common/http';
-import { http, HttpResponse } from 'msw';
-import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { ApiService } from './api.service';
 import { environment } from '../../../environments/environment';
-import { server } from '../../../testing/msw/server';
 
 const API = environment.apiUrl;
 
 describe('ApiService', () => {
   let service: ApiService;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), ApiService],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        ApiService,
+      ],
     });
     service = TestBed.inject(ApiService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  it('issues GET requests against the configured base URL with optional params', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.get(`${API}/widgets`, ({ request }) => {
-        receivedUrl = request.url;
-        return HttpResponse.json({ ok: true });
-      }),
-    );
+  afterEach(() => {
+    httpMock.verify();
+  });
 
+  it('issues GET requests against the configured base URL with optional params', () => {
     const params = new HttpParams().set('page', '2').set('search', 'foo');
-    const result = await new Promise((resolve) =>
-      service.get<{ ok: boolean }>('/widgets', params).subscribe(resolve),
-    );
+    let result: unknown;
+    service.get<{ ok: boolean }>('/widgets', params).subscribe((res) => (result = res));
+
+    const req = httpMock.expectOne((r) => r.url === `${API}/widgets`);
+    expect(req.request.method).toBe('GET');
+    expect(req.request.params.get('page')).toBe('2');
+    expect(req.request.params.get('search')).toBe('foo');
+    req.flush({ ok: true });
 
     expect(result).toEqual({ ok: true });
-    expect(receivedUrl).toContain('/widgets');
-    expect(receivedUrl).toContain('page=2');
-    expect(receivedUrl).toContain('search=foo');
   });
 
-  it('issues POST requests with the supplied body', async () => {
-    let receivedBody: unknown = null;
-    server.use(
-      http.post(`${API}/widgets`, async ({ request }) => {
-        receivedBody = await request.json();
-        return HttpResponse.json({ id: 1 });
-      }),
-    );
+  it('issues POST requests with the supplied body', () => {
+    let result: unknown;
+    service.post<{ id: number }>('/widgets', { name: 'A' }).subscribe((res) => (result = res));
 
-    const result = await new Promise((resolve) =>
-      service.post<{ id: number }>('/widgets', { name: 'A' }).subscribe(resolve),
-    );
+    const req = httpMock.expectOne(`${API}/widgets`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ name: 'A' });
+    req.flush({ id: 1 });
 
     expect(result).toEqual({ id: 1 });
-    expect(receivedBody).toEqual({ name: 'A' });
   });
 
-  it('uses an empty object as the default POST body', async () => {
-    let receivedBody: unknown = null;
-    server.use(
-      http.post(`${API}/widgets`, async ({ request }) => {
-        receivedBody = await request.json();
-        return HttpResponse.json({ id: 2 });
-      }),
-    );
+  it('uses an empty object as the default POST body', () => {
+    let result: unknown;
+    service.post<{ id: number }>('/widgets').subscribe((res) => (result = res));
 
-    await new Promise((resolve) => service.post<{ id: number }>('/widgets').subscribe(resolve));
+    const req = httpMock.expectOne(`${API}/widgets`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({});
+    req.flush({ id: 2 });
 
-    expect(receivedBody).toEqual({});
+    expect(result).toEqual({ id: 2 });
   });
 
-  it('issues PUT requests with the supplied body', async () => {
-    let receivedBody: unknown = null;
-    server.use(
-      http.put(`${API}/widgets/1`, async ({ request }) => {
-        receivedBody = await request.json();
-        return HttpResponse.json({ id: 1, name: 'B' });
-      }),
-    );
+  it('issues PUT requests with the supplied body', () => {
+    let result: unknown;
+    service
+      .put<{ id: number; name: string }>('/widgets/1', { name: 'B' })
+      .subscribe((res) => (result = res));
 
-    const result = await new Promise((resolve) =>
-      service.put<{ id: number; name: string }>('/widgets/1', { name: 'B' }).subscribe(resolve),
-    );
+    const req = httpMock.expectOne(`${API}/widgets/1`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ name: 'B' });
+    req.flush({ id: 1, name: 'B' });
 
     expect(result).toEqual({ id: 1, name: 'B' });
-    expect(receivedBody).toEqual({ name: 'B' });
   });
 
-  it('uses an empty object as the default PUT body', async () => {
-    let receivedBody: unknown = null;
-    server.use(
-      http.put(`${API}/widgets/1`, async ({ request }) => {
-        receivedBody = await request.json();
-        return HttpResponse.json({});
-      }),
-    );
+  it('uses an empty object as the default PUT body', () => {
+    let result: unknown;
+    service.put('/widgets/1').subscribe((res) => (result = res));
 
-    await new Promise((resolve) => service.put('/widgets/1').subscribe(resolve));
+    const req = httpMock.expectOne(`${API}/widgets/1`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({});
+    req.flush({});
 
-    expect(receivedBody).toEqual({});
+    expect(result).toEqual({});
   });
 
-  it('issues DELETE requests and resolves with void', async () => {
-    let called = false;
-    server.use(
-      http.delete(`${API}/widgets/1`, () => {
-        called = true;
-        return new HttpResponse(null, { status: 204 });
-      }),
-    );
+  it('issues DELETE requests and resolves with void', () => {
+    let completed = false;
+    service.delete('/widgets/1').subscribe(() => (completed = true));
 
-    const result = await new Promise((resolve) => service.delete('/widgets/1').subscribe(resolve));
+    const req = httpMock.expectOne(`${API}/widgets/1`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
 
-    expect(called).toBe(true);
-    expect(result).toBeNull();
+    expect(completed).toBe(true);
   });
 });

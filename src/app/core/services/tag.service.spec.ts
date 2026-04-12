@@ -1,85 +1,86 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { http, HttpResponse } from 'msw';
-import { firstValueFrom } from 'rxjs';
-import { describe, it, expect, beforeEach } from 'vitest';
+import {
+  HttpTestingController,
+  provideHttpClientTesting,
+} from '@angular/common/http/testing';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TagService } from './tag.service';
 import { ApiService } from './api.service';
 import { environment } from '../../../environments/environment';
-import { server } from '../../../testing/msw/server';
 import { makeTag } from '../../../testing/fixtures';
 
 const API = environment.apiUrl;
 
 describe('TagService', () => {
   let service: TagService;
+  let httpMock: HttpTestingController;
 
   beforeEach(() => {
     TestBed.configureTestingModule({
-      providers: [provideHttpClient(), ApiService, TagService],
+      providers: [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        ApiService,
+        TagService,
+      ],
     });
     service = TestBed.inject(TagService);
+    httpMock = TestBed.inject(HttpTestingController);
   });
 
-  it('getTags returns the list from the API', async () => {
-    const fixtures = [makeTag({ id: 10 }), makeTag({ id: 11, name: 'Customer' })];
-    server.use(http.get(`${API}/tags`, () => HttpResponse.json(fixtures)));
+  afterEach(() => {
+    httpMock.verify();
+  });
 
-    const result = await firstValueFrom(service.getTags());
+  it('getTags returns the list from the API', () => {
+    const fixtures = [makeTag({ id: 10 }), makeTag({ id: 11, name: 'Customer' })];
+    let result: unknown;
+    service.getTags().subscribe((res) => (result = res));
+
+    const req = httpMock.expectOne(`${API}/tags`);
+    expect(req.request.method).toBe('GET');
+    req.flush(fixtures);
 
     expect(result).toEqual(fixtures);
   });
 
-  it('createTag posts the request body', async () => {
-    let receivedBody: unknown = null;
+  it('createTag posts the request body', () => {
     const created = makeTag({ id: 50, name: 'New', color: '#fff000' });
-    server.use(
-      http.post(`${API}/tags`, async ({ request }) => {
-        receivedBody = await request.json();
-        return HttpResponse.json(created);
-      }),
-    );
+    let result: unknown;
+    service.createTag({ name: 'New', color: '#fff000' }).subscribe((res) => (result = res));
 
-    const result = await firstValueFrom(
-      service.createTag({ name: 'New', color: '#fff000' }),
-    );
+    const req = httpMock.expectOne(`${API}/tags`);
+    expect(req.request.method).toBe('POST');
+    expect(req.request.body).toEqual({ name: 'New', color: '#fff000' });
+    req.flush(created);
 
     expect(result).toEqual(created);
-    expect(receivedBody).toEqual({ name: 'New', color: '#fff000' });
   });
 
-  it('updateTag puts to the id-scoped URL', async () => {
-    let receivedUrl = '';
-    let receivedBody: unknown = null;
+  it('updateTag puts to the id-scoped URL', () => {
     const updated = makeTag({ id: 7, name: 'Updated', color: '#aabbcc' });
-    server.use(
-      http.put(`${API}/tags/7`, async ({ request }) => {
-        receivedUrl = request.url;
-        receivedBody = await request.json();
-        return HttpResponse.json(updated);
-      }),
-    );
+    let result: unknown;
+    service
+      .updateTag(7, { name: 'Updated', color: '#aabbcc' })
+      .subscribe((res) => (result = res));
 
-    const result = await firstValueFrom(
-      service.updateTag(7, { name: 'Updated', color: '#aabbcc' }),
-    );
+    const req = httpMock.expectOne(`${API}/tags/7`);
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toEqual({ name: 'Updated', color: '#aabbcc' });
+    req.flush(updated);
 
     expect(result).toEqual(updated);
-    expect(receivedUrl).toContain('/tags/7');
-    expect(receivedBody).toEqual({ name: 'Updated', color: '#aabbcc' });
   });
 
-  it('deleteTag deletes the id-scoped URL', async () => {
-    let receivedUrl = '';
-    server.use(
-      http.delete(`${API}/tags/9`, ({ request }) => {
-        receivedUrl = request.url;
-        return new HttpResponse(null, { status: 204 });
-      }),
-    );
+  it('deleteTag deletes the id-scoped URL', () => {
+    let completed = false;
+    service.deleteTag(9).subscribe(() => (completed = true));
 
-    await firstValueFrom(service.deleteTag(9));
+    const req = httpMock.expectOne(`${API}/tags/9`);
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null, { status: 204, statusText: 'No Content' });
 
-    expect(receivedUrl).toContain('/tags/9');
+    expect(completed).toBe(true);
   });
 });
