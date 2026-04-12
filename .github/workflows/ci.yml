@@ -45,6 +45,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     if: ${{ vars.RUN_E2E == 'true' }}
+    env:
+      SA_PASSWORD: ${{ secrets.SA_PASSWORD }}
 
     steps:
       - name: Checkout Angular repo
@@ -58,18 +60,16 @@ jobs:
 
       - name: Start API via docker-compose
         working-directory: dotnet-api
-        env:
-          SA_PASSWORD: SunroomCrmCI2026!
-        run: docker compose up -d --build --wait
+        run: docker compose up -d --build
 
       - name: Wait for API to be ready
         run: |
-          for i in $(seq 1 30); do
-            if curl -sf http://localhost:5236/health; then
+          for i in $(seq 1 60); do
+            if curl -s -o /dev/null --max-time 3 http://localhost:5236/; then
               echo "API is ready"
               exit 0
             fi
-            sleep 2
+            sleep 3
           done
           echo "API failed to start"
           docker compose -f dotnet-api/docker-compose.yml logs
