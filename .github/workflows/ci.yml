@@ -44,15 +44,36 @@ jobs:
     name: Playwright E2E
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    # Off by default — flip the repository variable RUN_E2E to "true" once the
-    # .NET API is reachable from CI. The Angular dev server is started by
-    # Playwright's webServer config; the API still has to be running on
-    # http://localhost:5236.
     if: ${{ vars.RUN_E2E == 'true' }}
 
     steps:
-      - name: Checkout
+      - name: Checkout Angular repo
         uses: actions/checkout@v4
+
+      - name: Checkout .NET API repo
+        uses: actions/checkout@v4
+        with:
+          repository: rvnminers-A-and-N/sunroom-crm-dotnet
+          path: dotnet-api
+
+      - name: Start API via docker-compose
+        working-directory: dotnet-api
+        env:
+          SA_PASSWORD: SunroomCrmCI2026!
+        run: docker compose up -d --build --wait
+
+      - name: Wait for API to be ready
+        run: |
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:5236/health; then
+              echo "API is ready"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "API failed to start"
+          docker compose -f dotnet-api/docker-compose.yml logs
+          exit 1
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -77,3 +98,8 @@ jobs:
           path: playwright-report/
           if-no-files-found: ignore
           retention-days: 14
+
+      - name: Stop API containers
+        if: always()
+        working-directory: dotnet-api
+        run: docker compose down -v
