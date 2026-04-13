@@ -22,8 +22,9 @@ test.describe('Contacts CRUD', () => {
     await expect(row).toBeVisible();
     await expect(row).toContainText('ada@example.com');
 
-    // Edit
-    await row.getByRole('button', { name: /edit/i }).click();
+    // Edit — icon-only buttons use mat-icon text (aria-hidden),
+    // so getByRole won't find them; use filter({ hasText }) instead.
+    await row.locator('button').filter({ hasText: 'edit' }).click();
     const editDialog = page.getByRole('dialog');
     await editDialog.getByLabel('Title').fill('Pioneer');
     await editDialog.getByRole('button', { name: /^save$/i }).click();
@@ -33,7 +34,8 @@ test.describe('Contacts CRUD', () => {
     // Delete (confirm dialog)
     await page
       .getByRole('row', { name: /ada lovelace/i })
-      .getByRole('button', { name: /delete/i })
+      .locator('button')
+      .filter({ hasText: 'delete' })
       .click();
     const confirm = page.getByRole('dialog');
     await confirm.getByRole('button', { name: /delete/i }).click();
