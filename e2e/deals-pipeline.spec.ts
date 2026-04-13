@@ -41,8 +41,31 @@ test.describe('Deals pipeline drag-and-drop', () => {
     const card = leadColumn.getByText('Drag me');
     await expect(card).toBeVisible();
 
-    // Drag the card from Lead to Qualified.
-    await card.dragTo(qualifiedColumn);
+    // CDK drag-and-drop needs explicit pointer event sequences.
+    const cardBox = await card.boundingBox();
+    const targetBox = await qualifiedColumn.boundingBox();
+
+    if (cardBox && targetBox) {
+      const startX = cardBox.x + cardBox.width / 2;
+      const startY = cardBox.y + cardBox.height / 2;
+      const endX = targetBox.x + targetBox.width / 2;
+      const endY = targetBox.y + targetBox.height / 2;
+
+      await page.mouse.move(startX, startY);
+      await page.mouse.down();
+      // Move in small steps so CDK recognizes the drag gesture.
+      const steps = 10;
+      for (let i = 1; i <= steps; i++) {
+        await page.mouse.move(
+          startX + ((endX - startX) * i) / steps,
+          startY + ((endY - startY) * i) / steps,
+        );
+      }
+      await page.mouse.up();
+    }
+
+    // Allow the drop animation and API call to settle.
+    await page.waitForTimeout(500);
 
     await expect(qualifiedColumn.getByText('Drag me')).toBeVisible();
     await expect(leadColumn.getByText('Drag me')).toHaveCount(0);

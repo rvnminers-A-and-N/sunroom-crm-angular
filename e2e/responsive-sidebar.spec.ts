@@ -13,12 +13,13 @@ test.describe('Responsive sidebar', () => {
     const sidebar = page.locator('aside.sidebar');
     await expect(sidebar).toBeVisible();
 
-    // Open the sidebar (from the collapsed initial state on mobile).
-    await page.locator('.sidebar__toggle').click();
+    // On mobile the sidebar toggle is outside the viewport; use the
+    // toolbar hamburger menu button which is always visible.
+    await page.locator('.toolbar__menu-btn').click();
     await expect(sidebar).not.toHaveClass(/sidebar--collapsed/);
 
     // Navigate to the contacts route — the layout component should re-collapse it.
-    await page.getByRole('link', { name: /contacts/i }).click();
+    await page.locator('.sidebar__link', { hasText: /contacts/i }).click();
     await page.waitForURL(/\/contacts$/);
 
     await expect(sidebar).toHaveClass(/sidebar--collapsed/);

@@ -13,8 +13,18 @@ test.describe('Authentication', () => {
   test('register, log out, log back in', async ({ page }) => {
     const user = await registerNewUser(page);
 
-    // Log out via the sidebar logout button (tooltip "Logout").
-    await page.getByRole('button', { name: /logout/i }).click();
+    // Expand the sidebar if collapsed so the logout button renders.
+    const sidebar = page.locator('aside.sidebar');
+    const isCollapsed = await sidebar.evaluate((el) =>
+      el.classList.contains('sidebar--collapsed'),
+    );
+    if (isCollapsed) {
+      await page.locator('.toolbar__menu-btn').click();
+      await expect(sidebar).not.toHaveClass(/sidebar--collapsed/);
+    }
+
+    // Logout button is an icon-only mat-icon-button (aria-hidden icon).
+    await page.locator('.sidebar__footer button').filter({ hasText: 'logout' }).click();
     await page.waitForURL(/\/auth\/login$/);
 
     await loginExistingUser(page, user);
