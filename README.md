@@ -26,7 +26,7 @@ Sunroom CRM is a multi-frontend CRM platform designed to demonstrate the same bu
 | Charts        | Chart.js 4 via ng2-charts                     |
 | State         | RxJS signals and observables                  |
 | Unit Tests    | Vitest 4 + Testing Library + coverage-v8      |
-| E2E Tests     | Playwright 1.59 (Chromium)                    |
+| E2E Tests     | Playwright 1.59 (Chromium, Firefox, WebKit)   |
 | CI/CD         | GitHub Actions                                |
 | Language      | TypeScript 5.9                                |
 
@@ -97,17 +97,20 @@ npm run test:coverage
 
 ### End-to-End Tests
 
-11 Playwright tests covering:
+24 Playwright tests across 8 feature areas, run against Chromium, Firefox, and WebKit:
 
 - **Authentication** — register, login, logout, invalid credentials, password mismatch validation, and unauthenticated redirect
-- **Contacts CRUD** — create, edit, delete, and search filtering
+- **Dashboard** — stat cards, pipeline chart, and recent activity list
+- **Contacts** — create, edit, delete, and search filtering
+- **Companies** — list display, create dialog, and detail page navigation
 - **Deals Pipeline** — deal creation and CDK drag-and-drop between pipeline stages with persistence
-- **Admin Route Guard** — non-admin users are redirected away from admin routes
-- **Responsive Sidebar** — sidebar collapses after navigation on narrow viewports
+- **Activities** — list page and create dialog with form fields
+- **Navigation & Layout** — sidebar links, section routing, settings profile, AI panel, and unknown route redirect
+- **Admin & Responsive** — admin route guard and sidebar collapse on narrow viewports
 
 ```bash
-npm run test:e2e:install   # Install Chromium (first time)
-npm run test:e2e           # Run tests
+npm run test:e2e:install   # Install Chromium, Firefox, and WebKit (first time)
+npm run test:e2e           # Run tests across all browsers
 ```
 
 ## CI/CD Pipeline
