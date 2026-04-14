@@ -17,9 +17,9 @@ test.describe('Contacts CRUD', () => {
     await dialog.getByRole('button', { name: /^create$/i }).click();
     await expect(dialog).toBeHidden();
 
-    // List
+    // List — wait for the table to refresh after creation
     const row = page.getByRole('row', { name: /ada lovelace/i });
-    await expect(row).toBeVisible();
+    await expect(row).toBeVisible({ timeout: 10_000 });
     await expect(row).toContainText('ada@example.com');
 
     // Edit — icon-only buttons use mat-icon text (aria-hidden),
