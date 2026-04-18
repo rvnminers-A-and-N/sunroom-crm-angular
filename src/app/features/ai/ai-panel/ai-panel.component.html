@@ -36,46 +36,16 @@
             </button>
           </div>
 
-          @if (searchResult(); as result) {
-            <div class="search-results">
-              @if (result.interpretation) {
-                <div class="search-results__interpretation">
-                  <mat-icon>psychology</mat-icon>
-                  <span>{{ result.interpretation }}</span>
-                </div>
-              }
-
-              @if (result.contacts.length > 0) {
-                <h4>Contacts ({{ result.contacts.length }})</h4>
-                <div class="search-results__list">
-                  @for (c of result.contacts; track c.id) {
-                    <a [routerLink]="['/contacts', c.id]" class="search-results__item">
-                      <mat-icon>person</mat-icon>
-                      <span>{{ c.firstName }} {{ c.lastName }}</span>
-                      @if (c.companyName) {
-                        <span class="search-results__meta">{{ c.companyName }}</span>
-                      }
-                    </a>
-                  }
-                </div>
-              }
-
-              @if (result.activities.length > 0) {
-                <h4>Activities ({{ result.activities.length }})</h4>
-                <div class="search-results__list">
-                  @for (a of result.activities; track a.id) {
-                    <div class="search-results__item">
-                      <app-activity-icon [type]="a.type" />
-                      <span>{{ a.subject }}</span>
-                      <span class="search-results__meta">{{ a.type }}</span>
-                    </div>
-                  }
-                </div>
-              }
-
-              @if (result.contacts.length === 0 && result.activities.length === 0) {
-                <p class="search-results__empty">No results found. Try rephrasing your question.</p>
-              }
+          @if (searchResult() || searching()) {
+            <div class="summary-result">
+              <h4>
+                <mat-icon>psychology</mat-icon>
+                Results
+                @if (searching()) {
+                  <mat-spinner diameter="14" class="ml-2"></mat-spinner>
+                }
+              </h4>
+              <p>{{ searchResult() }}@if (searching()) {<span class="typing-cursor"></span>}</p>
             </div>
           }
         </mat-card-content>
@@ -114,13 +84,66 @@
             </button>
           </div>
 
-          @if (summaryResult(); as summary) {
+          @if (summaryResult() || summarizing()) {
             <div class="summary-result">
               <h4>
                 <mat-icon>auto_awesome</mat-icon>
                 Summary
+                @if (summarizing()) {
+                  <mat-spinner diameter="14" class="ml-2"></mat-spinner>
+                }
               </h4>
-              <p>{{ summary }}</p>
+              <p>{{ summaryResult() }}@if (summarizing()) {<span class="typing-cursor"></span>}</p>
+            </div>
+          }
+        </mat-card-content>
+      </mat-card>
+    </div>
+  </mat-tab>
+
+  <mat-tab label="Deal Insights">
+    <div class="ai-section">
+      <mat-card>
+        <mat-card-content>
+          <p class="ai-section__desc">
+            Enter a deal ID to generate AI-powered insights and recommendations.
+          </p>
+          <div class="ai-section__input-row">
+            <mat-form-field appearance="outline" class="ai-section__input">
+              <mat-label>Deal ID</mat-label>
+              <mat-icon matPrefix>trending_up</mat-icon>
+              <input
+                matInput
+                type="number"
+                [(ngModel)]="dealIdInput"
+                (keydown.enter)="onGenerateInsights()"
+                placeholder="Enter deal ID..."
+              />
+            </mat-form-field>
+            <button
+              mat-flat-button
+              color="primary"
+              (click)="onGenerateInsights()"
+              [disabled]="generatingInsights() || !dealIdInput.trim()"
+            >
+              @if (generatingInsights()) {
+                <mat-spinner diameter="18"></mat-spinner>
+              } @else {
+                Generate Insights
+              }
+            </button>
+          </div>
+
+          @if (insightsResult() || generatingInsights()) {
+            <div class="summary-result">
+              <h4>
+                <mat-icon>trending_up</mat-icon>
+                Insights
+                @if (generatingInsights()) {
+                  <mat-spinner diameter="14" class="ml-2"></mat-spinner>
+                }
+              </h4>
+              <p>{{ insightsResult() }}@if (generatingInsights()) {<span class="typing-cursor"></span>}</p>
             </div>
           }
         </mat-card-content>
