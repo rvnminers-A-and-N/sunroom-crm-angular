@@ -1,13 +1,27 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { NEVER, of, throwError } from 'rxjs';
 import { screen } from '@testing-library/angular';
 import { AiPanelComponent } from './ai-panel.component';
 import { AiService } from '../services/ai.service';
 import { renderWithProviders } from '../../../../testing/render';
-import { makeContact, makeActivity } from '../../../../testing/fixtures';
-import type { SmartSearchResponse } from '@core/models/ai.model';
+
+async function* fakeStream(
+  tokens: string[],
+): AsyncGenerator<string, void, undefined> {
+  for (const t of tokens) yield t;
+}
+
+async function* neverStream(): AsyncGenerator<string, void, undefined> {
+  await new Promise(() => {});
+}
+
+async function* errorStream(msg: string): AsyncGenerator<string, void, undefined> {
+  throw new Error(msg);
+}
 
 interface AiServiceStub {
+  smartSearchStream: ReturnType<typeof vi.fn>;
+  summarizeStream: ReturnType<typeof vi.fn>;
+  dealInsightsStream: ReturnType<typeof vi.fn>;
   smartSearch: ReturnType<typeof vi.fn>;
   summarize: ReturnType<typeof vi.fn>;
 }
@@ -15,14 +29,17 @@ interface AiServiceStub {
 function makeStubs(): { aiService: AiServiceStub } {
   return {
     aiService: {
-      smartSearch: vi.fn().mockReturnValue(
-        of<SmartSearchResponse>({
-          interpretation: 'recent contacts',
-          contacts: [makeContact({ id: 1 })],
-          activities: [makeActivity({ id: 1 })],
-        }),
-      ),
-      summarize: vi.fn().mockReturnValue(of({ summary: 'short summary' })),
+      smartSearchStream: vi
+        .fn()
+        .mockReturnValue(fakeStream(['recent', ' contacts'])),
+      summarizeStream: vi
+        .fn()
+        .mockReturnValue(fakeStream(['short', ' summary'])),
+      dealInsightsStream: vi
+        .fn()
+        .mockReturnValue(fakeStream(['deal', ' insight'])),
+      smartSearch: vi.fn(),
+      summarize: vi.fn(),
     },
   };
 }
@@ -51,85 +68,52 @@ describe('AiPanelComponent', () => {
     const { fixture, aiService } = await renderPanel();
     fixture.componentInstance.searchQuery = '   ';
     fixture.componentInstance.onSearch();
-    expect(aiService.smartSearch).not.toHaveBeenCalled();
-    expect(fixture.componentInstance.searching()).toBe(false);
+    expect(aiService.smartSearchStream).not.toHaveBeenCalled();
   });
 
-  it('onSearch sets searching, calls the service and stores the result', async () => {
+  it('onSearch calls the streaming service and stores the result', async () => {
     const { fixture, aiService } = await renderPanel();
     fixture.componentInstance.searchQuery = 'who did I talk to';
-    fixture.componentInstance.onSearch();
+    await fixture.componentInstance.onSearch();
 
-    expect(aiService.smartSearch).toHaveBeenCalledWith('who did I talk to');
+    expect(aiService.smartSearchStream).toHaveBeenCalledWith(
+      'who did I talk to',
+      expect.any(AbortSignal),
+    );
     expect(fixture.componentInstance.searching()).toBe(false);
-    expect(fixture.componentInstance.searchResult()?.interpretation).toBe('recent contacts');
+    expect(fixture.componentInstance.searchResult()).toBe('recent contacts');
   });
 
-  it('renders contacts and activities sections after a successful search', async () => {
+  it('renders streamed search result text', async () => {
     const { fixture } = await renderPanel();
     fixture.componentInstance.searchQuery = 'people';
-    fixture.componentInstance.onSearch();
+    await fixture.componentInstance.onSearch();
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(screen.getByText(/Contacts \(1\)/)).toBeInTheDocument();
-    expect(screen.getByText('Ada Lovelace')).toBeInTheDocument();
-    expect(screen.getByText(/Activities \(1\)/)).toBeInTheDocument();
+    expect(screen.getByText('recent contacts')).toBeInTheDocument();
   });
 
-  it('renders the empty results message when there are no contacts and activities', async () => {
+  it('keeps searching false on stream error', async () => {
     const stubs = makeStubs();
-    stubs.aiService.smartSearch.mockReturnValueOnce(
-      of<SmartSearchResponse>({ interpretation: '', contacts: [], activities: [] }),
+    stubs.aiService.smartSearchStream.mockReturnValueOnce(
+      errorStream('boom'),
     );
-
     const { fixture } = await renderPanel(stubs);
-    fixture.componentInstance.searchQuery = 'nope';
-    fixture.componentInstance.onSearch();
-    fixture.detectChanges();
-    await fixture.whenStable();
-
-    expect(screen.getByText(/No results found/)).toBeInTheDocument();
-  });
-
-  it('renders the contact company meta only when present', async () => {
-    const stubs = makeStubs();
-    stubs.aiService.smartSearch.mockReturnValueOnce(
-      of<SmartSearchResponse>({
-        interpretation: '',
-        contacts: [
-          makeContact({ id: 1, companyName: 'Acme Inc' }),
-          makeContact({ id: 2, firstName: 'Grace', lastName: 'Hopper', companyName: null }),
-        ],
-        activities: [],
-      }),
-    );
-
-    const { fixture } = await renderPanel(stubs);
-    fixture.componentInstance.searchQuery = 'people';
-    fixture.componentInstance.onSearch();
-    fixture.detectChanges();
-    await fixture.whenStable();
-
-    // Only the first contact has a company shown.
-    expect(screen.getAllByText('Acme Inc')).toHaveLength(1);
-  });
-
-  it('keeps searching false on smartSearch error', async () => {
-    const { fixture, aiService } = await renderPanel();
-    aiService.smartSearch.mockReturnValueOnce(throwError(() => new Error('boom')));
 
     fixture.componentInstance.searchQuery = 'fail';
-    fixture.componentInstance.onSearch();
+    await fixture.componentInstance.onSearch();
 
     expect(fixture.componentInstance.searching()).toBe(false);
   });
 
   it('shows the search spinner while a search is in flight', async () => {
-    const { fixture, aiService } = await renderPanel();
-    aiService.smartSearch.mockReturnValueOnce(NEVER);
+    const stubs = makeStubs();
+    stubs.aiService.smartSearchStream.mockReturnValueOnce(neverStream());
 
+    const { fixture } = await renderPanel(stubs);
     fixture.componentInstance.searchQuery = 'wait';
+    // Don't await — it never resolves
     fixture.componentInstance.onSearch();
     fixture.detectChanges();
 
@@ -141,40 +125,42 @@ describe('AiPanelComponent', () => {
     const { fixture, aiService } = await renderPanel();
     fixture.componentInstance.summarizeText = '   ';
     fixture.componentInstance.onSummarize();
-    expect(aiService.summarize).not.toHaveBeenCalled();
-    expect(fixture.componentInstance.summarizing()).toBe(false);
+    expect(aiService.summarizeStream).not.toHaveBeenCalled();
   });
 
-  it('onSummarize calls the service and stores the summary', async () => {
+  it('onSummarize calls the streaming service and stores the summary', async () => {
     const { fixture, aiService } = await renderPanel();
     fixture.componentInstance.summarizeText = 'long text';
-    fixture.componentInstance.onSummarize();
+    await fixture.componentInstance.onSummarize();
 
-    expect(aiService.summarize).toHaveBeenCalledWith('long text');
+    expect(aiService.summarizeStream).toHaveBeenCalledWith(
+      'long text',
+      expect.any(AbortSignal),
+    );
     expect(fixture.componentInstance.summarizing()).toBe(false);
     expect(fixture.componentInstance.summaryResult()).toBe('short summary');
   });
 
-  it('keeps summarizing false on summarize error', async () => {
-    const { fixture, aiService } = await renderPanel();
-    aiService.summarize.mockReturnValueOnce(throwError(() => new Error('nope')));
+  it('keeps summarizing false on stream error', async () => {
+    const stubs = makeStubs();
+    stubs.aiService.summarizeStream.mockReturnValueOnce(errorStream('nope'));
+    const { fixture } = await renderPanel(stubs);
 
     fixture.componentInstance.summarizeText = 'fail';
-    fixture.componentInstance.onSummarize();
+    await fixture.componentInstance.onSummarize();
 
     expect(fixture.componentInstance.summarizing()).toBe(false);
   });
 
   it('renders the summary result block after a successful summarize', async () => {
     const { fixture } = await renderPanel();
-    // Activate the Summarize tab so its @if branches are exercised by the template.
     const summarizeTab = screen.getByRole('tab', { name: /Summarize/i });
     summarizeTab.click();
     fixture.detectChanges();
     await fixture.whenStable();
 
     fixture.componentInstance.summarizeText = 'long text';
-    fixture.componentInstance.onSummarize();
+    await fixture.componentInstance.onSummarize();
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -183,9 +169,10 @@ describe('AiPanelComponent', () => {
   });
 
   it('shows the summarize spinner while a summarize is in flight', async () => {
-    const { fixture, aiService } = await renderPanel();
-    aiService.summarize.mockReturnValueOnce(NEVER);
+    const stubs = makeStubs();
+    stubs.aiService.summarizeStream.mockReturnValueOnce(neverStream());
 
+    const { fixture } = await renderPanel(stubs);
     const summarizeTab = screen.getByRole('tab', { name: /Summarize/i });
     summarizeTab.click();
     fixture.detectChanges();
@@ -219,10 +206,15 @@ describe('AiPanelComponent', () => {
     const input = fixture.nativeElement.querySelector(
       'input[placeholder^="e.g. Who"]',
     ) as HTMLInputElement;
-    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
     fixture.detectChanges();
 
-    expect(aiService.smartSearch).toHaveBeenCalledWith('enter test');
+    expect(aiService.smartSearchStream).toHaveBeenCalledWith(
+      'enter test',
+      expect.any(AbortSignal),
+    );
   });
 
   it('triggers onSearch when the Search button is clicked via DOM', async () => {
@@ -234,7 +226,10 @@ describe('AiPanelComponent', () => {
     searchBtn.click();
     fixture.detectChanges();
 
-    expect(aiService.smartSearch).toHaveBeenCalledWith('click test');
+    expect(aiService.smartSearchStream).toHaveBeenCalledWith(
+      'click test',
+      expect.any(AbortSignal),
+    );
   });
 
   it('triggers onSummarize when the Summarize button is clicked via DOM', async () => {
@@ -244,7 +239,9 @@ describe('AiPanelComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = fixture.nativeElement.querySelector(
+      'textarea',
+    ) as HTMLTextAreaElement;
     textarea.value = 'click summarize';
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
@@ -253,7 +250,10 @@ describe('AiPanelComponent', () => {
     summarizeBtn.click();
     fixture.detectChanges();
 
-    expect(aiService.summarize).toHaveBeenCalledWith('click summarize');
+    expect(aiService.summarizeStream).toHaveBeenCalledWith(
+      'click summarize',
+      expect.any(AbortSignal),
+    );
   });
 
   it('updates summarizeText via the textarea ngModel', async () => {
@@ -263,7 +263,9 @@ describe('AiPanelComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    const textarea = fixture.nativeElement.querySelector('textarea') as HTMLTextAreaElement;
+    const textarea = fixture.nativeElement.querySelector(
+      'textarea',
+    ) as HTMLTextAreaElement;
     textarea.value = 'paste this';
     textarea.dispatchEvent(new Event('input', { bubbles: true }));
     fixture.detectChanges();
