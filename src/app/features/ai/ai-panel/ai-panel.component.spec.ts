@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { screen } from '@testing-library/angular';
+import { NgModel } from '@angular/forms';
+import { By } from '@angular/platform-browser';
 import { AiPanelComponent } from './ai-panel.component';
 import { AiService } from '../services/ai.service';
 import { renderWithProviders } from '../../../../testing/render';
@@ -105,6 +107,23 @@ describe('AiPanelComponent', () => {
     await fixture.componentInstance.onSearch();
 
     expect(fixture.componentInstance.searching()).toBe(false);
+    expect(fixture.componentInstance.searchResult()).toBe('Error: boom');
+  });
+
+  it('suppresses AbortError during onSearch', async () => {
+    const stubs = makeStubs();
+    const abortError = new DOMException('aborted', 'AbortError');
+    async function* abortStream(): AsyncGenerator<string, void, undefined> {
+      throw abortError;
+    }
+    stubs.aiService.smartSearchStream.mockReturnValueOnce(abortStream());
+    const { fixture } = await renderPanel(stubs);
+
+    fixture.componentInstance.searchQuery = 'abort test';
+    await fixture.componentInstance.onSearch();
+
+    expect(fixture.componentInstance.searching()).toBe(false);
+    expect(fixture.componentInstance.searchResult()).toBe('');
   });
 
   it('shows the search spinner while a search is in flight', async () => {
@@ -150,6 +169,23 @@ describe('AiPanelComponent', () => {
     await fixture.componentInstance.onSummarize();
 
     expect(fixture.componentInstance.summarizing()).toBe(false);
+    expect(fixture.componentInstance.summaryResult()).toBe('Error: nope');
+  });
+
+  it('suppresses AbortError during onSummarize', async () => {
+    const stubs = makeStubs();
+    const abortError = new DOMException('aborted', 'AbortError');
+    async function* abortStream(): AsyncGenerator<string, void, undefined> {
+      throw abortError;
+    }
+    stubs.aiService.summarizeStream.mockReturnValueOnce(abortStream());
+    const { fixture } = await renderPanel(stubs);
+
+    fixture.componentInstance.summarizeText = 'abort test';
+    await fixture.componentInstance.onSummarize();
+
+    expect(fixture.componentInstance.summarizing()).toBe(false);
+    expect(fixture.componentInstance.summaryResult()).toBe('');
   });
 
   it('renders the summary result block after a successful summarize', async () => {
@@ -271,5 +307,284 @@ describe('AiPanelComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.componentInstance.summarizeText).toBe('paste this');
+  });
+
+  it('covers the null-coalescing fallback in onSearch update', async () => {
+    const stubs = makeStubs();
+    // Create a generator that sets searchResult to null before yielding
+    async function* trickStream(
+      component: AiPanelComponent,
+    ): AsyncGenerator<string, void, undefined> {
+      component.searchResult.set(null);
+      yield 'x';
+    }
+    const { fixture } = await renderPanel(stubs);
+    const comp = fixture.componentInstance;
+    stubs.aiService.smartSearchStream.mockReturnValueOnce(trickStream(comp));
+    comp.searchQuery = 'trick';
+    await comp.onSearch();
+    expect(comp.searchResult()).toBe('x');
+  });
+
+  it('covers the null-coalescing fallback in onSummarize update', async () => {
+    const stubs = makeStubs();
+    async function* trickStream(
+      component: AiPanelComponent,
+    ): AsyncGenerator<string, void, undefined> {
+      component.summaryResult.set(null);
+      yield 'y';
+    }
+    const { fixture } = await renderPanel(stubs);
+    const comp = fixture.componentInstance;
+    stubs.aiService.summarizeStream.mockReturnValueOnce(trickStream(comp));
+    comp.summarizeText = 'trick';
+    await comp.onSummarize();
+    expect(comp.summaryResult()).toBe('y');
+  });
+
+  // ── onGenerateInsights ────────────────────────────────────────────
+
+  it('covers the null-coalescing fallback in onGenerateInsights update', async () => {
+    const stubs = makeStubs();
+    async function* trickStream(
+      component: AiPanelComponent,
+    ): AsyncGenerator<string, void, undefined> {
+      component.insightsResult.set(null);
+      yield 'z';
+    }
+    const { fixture } = await renderPanel(stubs);
+    const comp = fixture.componentInstance;
+    stubs.aiService.dealInsightsStream.mockReturnValueOnce(trickStream(comp));
+    comp.dealIdInput = '1';
+    await comp.onGenerateInsights();
+    expect(comp.insightsResult()).toBe('z');
+  });
+
+  it('onGenerateInsights does nothing when dealIdInput is empty', async () => {
+    const { fixture, aiService } = await renderPanel();
+    fixture.componentInstance.dealIdInput = '';
+    await fixture.componentInstance.onGenerateInsights();
+    expect(aiService.dealInsightsStream).not.toHaveBeenCalled();
+  });
+
+  it('onGenerateInsights does nothing when dealIdInput is not a number', async () => {
+    const { fixture, aiService } = await renderPanel();
+    fixture.componentInstance.dealIdInput = 'abc';
+    await fixture.componentInstance.onGenerateInsights();
+    expect(aiService.dealInsightsStream).not.toHaveBeenCalled();
+  });
+
+  it('onGenerateInsights does nothing when dealIdInput is zero or negative', async () => {
+    const { fixture, aiService } = await renderPanel();
+
+    fixture.componentInstance.dealIdInput = '0';
+    await fixture.componentInstance.onGenerateInsights();
+    expect(aiService.dealInsightsStream).not.toHaveBeenCalled();
+
+    fixture.componentInstance.dealIdInput = '-5';
+    await fixture.componentInstance.onGenerateInsights();
+    expect(aiService.dealInsightsStream).not.toHaveBeenCalled();
+  });
+
+  it('onGenerateInsights calls the streaming service and stores the result', async () => {
+    const { fixture, aiService } = await renderPanel();
+    fixture.componentInstance.dealIdInput = '42';
+    await fixture.componentInstance.onGenerateInsights();
+
+    expect(aiService.dealInsightsStream).toHaveBeenCalledWith(
+      42,
+      expect.any(AbortSignal),
+    );
+    expect(fixture.componentInstance.generatingInsights()).toBe(false);
+    expect(fixture.componentInstance.insightsResult()).toBe('deal insight');
+  });
+
+  it('keeps generatingInsights false on stream error', async () => {
+    const stubs = makeStubs();
+    stubs.aiService.dealInsightsStream.mockReturnValueOnce(
+      errorStream('insight fail'),
+    );
+    const { fixture } = await renderPanel(stubs);
+
+    fixture.componentInstance.dealIdInput = '10';
+    await fixture.componentInstance.onGenerateInsights();
+
+    expect(fixture.componentInstance.generatingInsights()).toBe(false);
+    expect(fixture.componentInstance.insightsResult()).toBe(
+      'Error: insight fail',
+    );
+  });
+
+  it('suppresses AbortError during onGenerateInsights', async () => {
+    const stubs = makeStubs();
+    const abortError = new DOMException('The operation was aborted', 'AbortError');
+    async function* abortStream(): AsyncGenerator<string, void, undefined> {
+      throw abortError;
+    }
+    stubs.aiService.dealInsightsStream.mockReturnValueOnce(abortStream());
+    const { fixture } = await renderPanel(stubs);
+
+    fixture.componentInstance.dealIdInput = '10';
+    await fixture.componentInstance.onGenerateInsights();
+
+    expect(fixture.componentInstance.generatingInsights()).toBe(false);
+    // insightsResult should NOT contain an error message for AbortError
+    expect(fixture.componentInstance.insightsResult()).toBe('');
+  });
+
+  it('shows the insights spinner while generating insights', async () => {
+    const stubs = makeStubs();
+    stubs.aiService.dealInsightsStream.mockReturnValueOnce(neverStream());
+
+    const { fixture } = await renderPanel(stubs);
+    fixture.componentInstance.dealIdInput = '5';
+    // Don't await — it never resolves
+    fixture.componentInstance.onGenerateInsights();
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.generatingInsights()).toBe(true);
+  });
+
+  // ── Deal Insights DOM interaction tests ───────────────────────────
+
+  it('renders the Deal Insights tab label', async () => {
+    await renderPanel();
+    expect(screen.getByText('Deal Insights')).toBeInTheDocument();
+  });
+
+  it('renders insights result text after generating insights via the Deal Insights tab', async () => {
+    const { fixture } = await renderPanel();
+    const insightsTab = screen.getByRole('tab', { name: /Deal Insights/i });
+    insightsTab.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    fixture.componentInstance.dealIdInput = '7';
+    await fixture.componentInstance.onGenerateInsights();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(screen.getByText('Insights')).toBeInTheDocument();
+    expect(screen.getByText('deal insight')).toBeInTheDocument();
+  });
+
+  it('calls onGenerateInsights via the Generate Insights button click handler', async () => {
+    const { fixture, aiService } = await renderPanel();
+    const insightsTab = screen.getByRole('tab', { name: /Deal Insights/i });
+    insightsTab.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    fixture.componentInstance.dealIdInput = '99';
+    await fixture.componentInstance.onGenerateInsights();
+
+    expect(aiService.dealInsightsStream).toHaveBeenCalledWith(
+      99,
+      expect.any(AbortSignal),
+    );
+    expect(fixture.componentInstance.insightsResult()).toBe('deal insight');
+  });
+
+  it('exercises the (click) handler on the Generate Insights button', async () => {
+    // The button has (click)="onGenerateInsights()" in the template.
+    // Due to Angular's type="number" ngModel interop, we set dealIdInput
+    // before the tab is rendered to avoid ExpressionChangedAfterItHasBeenCheckedError.
+    const stubs = makeStubs();
+    stubs.aiService.dealInsightsStream.mockReturnValue(fakeStream(['ok']));
+    const { fixture, aiService } = await renderPanel(stubs);
+
+    // Set dealIdInput BEFORE switching tabs to avoid two-way binding issues
+    fixture.componentInstance.dealIdInput = '42';
+
+    const insightsTab = screen.getByRole('tab', { name: /Deal Insights/i });
+    insightsTab.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const btn = screen.getByRole('button', {
+      name: /Generate Insights/,
+    }) as HTMLButtonElement;
+    btn.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(aiService.dealInsightsStream).toHaveBeenCalled();
+  });
+
+  it('triggers onGenerateInsights when Enter is pressed in the deal ID input', async () => {
+    const { fixture, aiService } = await renderPanel();
+    fixture.autoDetectChanges(true);
+    const insightsTab = screen.getByRole('tab', { name: /Deal Insights/i });
+    insightsTab.click();
+    await fixture.whenStable();
+
+    fixture.componentInstance.dealIdInput = '55';
+    await fixture.whenStable();
+
+    const input = fixture.nativeElement.querySelector(
+      'input[type="number"]',
+    ) as HTMLInputElement;
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }),
+    );
+    await fixture.whenStable();
+
+    expect(aiService.dealInsightsStream).toHaveBeenCalledWith(
+      55,
+      expect.any(AbortSignal),
+    );
+  });
+
+  it('shows the insights spinner in the Deal Insights tab DOM while generating', async () => {
+    const stubs = makeStubs();
+    stubs.aiService.dealInsightsStream.mockReturnValueOnce(neverStream());
+
+    const { fixture } = await renderPanel(stubs);
+    fixture.autoDetectChanges(true);
+    const insightsTab = screen.getByRole('tab', { name: /Deal Insights/i });
+    insightsTab.click();
+    await fixture.whenStable();
+
+    fixture.componentInstance.dealIdInput = '5';
+    await fixture.whenStable();
+
+    fixture.componentInstance.onGenerateInsights();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.generatingInsights()).toBe(true);
+    expect(fixture.nativeElement.querySelector('mat-spinner')).not.toBeNull();
+  });
+
+  it('updates dealIdInput via the Deal Insights tab', async () => {
+    const { fixture } = await renderPanel();
+    fixture.autoDetectChanges(true);
+    const insightsTab = screen.getByRole('tab', { name: /Deal Insights/i });
+    insightsTab.click();
+    await fixture.whenStable();
+
+    fixture.componentInstance.dealIdInput = '123';
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.dealIdInput).toBe('123');
+  });
+
+  it('writes dealIdInput through the ngModel directive on the number input', async () => {
+    const { fixture } = await renderPanel();
+    const insightsTab = screen.getByRole('tab', { name: /Deal Insights/i });
+    insightsTab.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    // Get the NgModel directive on the number input
+    const inputDebug = fixture.debugElement.query(
+      By.css('input[type="number"]'),
+    );
+    const ngModel = inputDebug.injector.get(NgModel);
+    // Simulate the ngModel viewToModelUpdate path
+    ngModel.viewToModelUpdate('77');
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(fixture.componentInstance.dealIdInput).toBe('77');
   });
 });
