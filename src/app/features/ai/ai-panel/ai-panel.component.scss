@@ -137,6 +137,24 @@
   }
 }
 
+.typing-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: var(--sr-primary);
+  margin-left: 2px;
+  vertical-align: text-bottom;
+  animation: blink 0.8s step-end infinite;
+}
+
+@keyframes blink {
+  50% { opacity: 0; }
+}
+
+.ml-2 {
+  margin-left: 8px;
+}
+
 @media (max-width: 600px) {
   .ai-section__input-row {
     flex-direction: column;
